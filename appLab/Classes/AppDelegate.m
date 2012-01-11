@@ -18,9 +18,6 @@
 {
 	isTestContainer = NO;
 	
-	#ifdef DEBUG
-	isTestContainer = YES;
-	#endif
 	
     return [super init];
 }
