@@ -22,6 +22,7 @@
 - (void)unloadSound:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)startAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)stopAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
+- (void)setAudioCurrentTime:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)toggleAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)setColors:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)play:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;

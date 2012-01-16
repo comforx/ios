@@ -40,6 +40,7 @@
 @synthesize videoPlayer;
 @synthesize bStarting;
 
+
 #define radians(degrees) (degrees * M_PI/180)
 
 PlayingView *singletonPlayingView = nil;
@@ -1525,7 +1526,7 @@ NSString *strVers = nil;
 	}
 }
 
-- (void)startAudio:(NSString *)file
+- (void)startAudio:(NSString *)file withLooping:(BOOL)doesLoop
 {
 	if( videoPlayer != nil || ( myDelegate.myPlayer != nil && myDelegate.myPlayer.bPlaying == YES ) )
 	{
@@ -1562,9 +1563,24 @@ NSString *strVers = nil;
 	NSError *aderr = nil;
 	adPlayer = [[AVAudioPlayer alloc] initWithData:data error:&aderr];
 	adPlayer.delegate = self;
+	adPlayer.currentTime = audioCurrentTime;
+	
+	if(doesLoop)
+	{
+		adPlayer.numberOfLoops = -1;
+	}
 	[adPlayer play];
 	
 	[[AppMobiViewController masterViewController] performSelectorOnMainThread:@selector(fireEvent:) withObject:@"appMobi.player.audio.start" waitUntilDone:NO];
+}
+
+- (void)setAudioCurrentTime:(float) time
+{
+	audioCurrentTime = time;
+	if(adPlayer != nil) {
+		adPlayer.currentTime = time;
+	}
+	
 }
 
 -(void)toggleAudio {

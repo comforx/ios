@@ -183,9 +183,9 @@
 
 - (void)startAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
 	NSString *strRelativePath = (NSString *)[arguments objectAtIndex:0];
-	
+	BOOL doesLoop = ([arguments count] > 1)?[[arguments objectAtIndex:1] boolValue]:NO; 
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
-	[[vc getPlayerView] startAudio:strRelativePath];
+	[[vc getPlayerView] startAudio:strRelativePath withLooping:doesLoop];
 	[vc getPlayerView].lastPlaying = [strRelativePath copy];	
 }
 
@@ -198,6 +198,12 @@
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[[vc getPlayerView] stopAudio];
 	[vc getPlayerView].lastPlaying = nil;
+}
+
+- (void)setAudioCurrentTime:(NSMutableArray *)arguments withDict:(NSMutableDictionary *)options {
+	float time = [[arguments objectAtIndex:0] floatValue];
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] setAudioCurrentTime:time];
 }
 
 - (void)setColors:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {

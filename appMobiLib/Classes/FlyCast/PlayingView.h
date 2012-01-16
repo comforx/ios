@@ -137,6 +137,8 @@
 	CGPoint landscapePosition;
 	
 	AppMobiDelegate *myDelegate;
+	
+	float audioCurrentTime;
 }
 
 //@property (nonatomic, assign) AppDelegate *myApp;
@@ -162,9 +164,10 @@
 - (void)playSound:(NSString *)file;
 - (void)loadSound:(NSString *)file;
 - (void)unloadSound:(NSString *)file;
-- (void)startAudio:(NSString *)file;
+- (void)startAudio:(NSString *)file withLooping:(BOOL)doesLoop;
 - (void)toggleAudio;
 - (void)stopAudio;
+- (void)setAudioCurrentTime:(float)time;
 - (void)getBackgrounds:(id)sender;
 - (void)createViews:(id)sender;
 - (void)showBusy:(BOOL)show withAd:(BOOL)ad;

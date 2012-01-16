@@ -364,8 +364,9 @@ AppMobi.Player.prototype.unloadSound = function(strRelativeFileURL) {
     AppMobi.exec("AppMobiPlayer.unloadSound", strRelativeFileURL);
 };
 
-AppMobi.Player.prototype.startAudio = function(strRelativeFileURL) {
-    AppMobi.exec("AppMobiPlayer.startAudio", strRelativeFileURL);
+AppMobi.Player.prototype.startAudio = function(strRelativeFileURL, boolLoop) {
+	if(boolLoop == null || boolLoop == undefined) boolLoop = false;
+    AppMobi.exec("AppMobiPlayer.startAudio", strRelativeFileURL, boolLoop);
 };
 
 AppMobi.Player.prototype.toggleAudio = function() {
@@ -374,6 +375,10 @@ AppMobi.Player.prototype.toggleAudio = function() {
 
 AppMobi.Player.prototype.stopAudio = function() {
     AppMobi.exec("AppMobiPlayer.stopAudio");
+};
+
+AppMobi.Player.prototype.setAudioCurrentTime = function(time) {
+    AppMobi.exec("AppMobiPlayer.setAudioCurrentTime", time);
 };
 
 AppMobi.Player.prototype.play = function() {
