@@ -1281,6 +1281,10 @@ void phonecallListener(void *inUserData, UInt32 interruptionState)
 	[xmlParser setDelegate:parser];
 	config.bParsed = [xmlParser parse];
 	[parser release];
+	if(config.bParsed) {
+		//check that minimum set of values is present
+		config.bParsed = (config.appName!=nil && config.relName!=nil && config.bundleURL!=nil);
+	}
 	
 	return config;
 }
