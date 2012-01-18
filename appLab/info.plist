@@ -62,7 +62,7 @@
 	<key>PhoneGapVersion</key>
 	<string>1.0.0</string>
 	<key>BundledJavascript</key>
-	<false/>
+	<true/>
 	<key>AppMobiVersion</key>
 	<string>3.4.0</string>
 	<key>UIInterfaceOrientation</key>
