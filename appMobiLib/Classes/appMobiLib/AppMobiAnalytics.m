@@ -167,6 +167,7 @@
 	if( result == nil || [result length] == 0 || [result length] > 15 )
 	{
 		AMLog( @"statsWorker ~~ echoip fail" );
+		[pool release];
 		return;
 	}
 

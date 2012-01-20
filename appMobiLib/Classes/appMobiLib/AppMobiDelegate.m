@@ -26,6 +26,7 @@
 #import "AMSResponse.h"
 #import "AMSNotification.h"
 #import "AppMobiCanvas.h"
+#import "AppMobiAnalytics.h"
 
 @implementation AMApplication
 
@@ -169,6 +170,7 @@ void AMLog( NSString *format, ... )
 @synthesize bShowAds;
 @synthesize bForceGoogle;
 @synthesize isWebContainer;
+@synthesize isTestLocal;
 @synthesize isTestContainer;
 @synthesize isProtocolHandler;
 @synthesize isMobiusInstall;
@@ -430,15 +432,6 @@ BOOL bShouldFireJSEventWithUpdateToken = YES;
         }
 	}
 	
-	/* Mobius app testing
-	isMobiusInstall = YES;
-	isProtocolHandler = YES;
-	urlApp = @"marc.jellyblox";
-	urlRel = @"3.4.0";
-	urlCmd = @"RUNAPP";
-	//*/
-	
-	
 	[self testMemory:nil];
 	if( isWebContainer == NO || isMobiusInstall == YES )
 	{
@@ -465,8 +458,9 @@ BOOL bShouldFireJSEventWithUpdateToken = YES;
 	{
 		[splashController.view removeFromSuperview];
 		bStartup = NO;
+        [viewController performSelectorOnMainThread:@selector(checkForWrongOrientation:) withObject:nil waitUntilDone:NO];
 	}
-	
+
 	[splashLock unlock];
 }
 
@@ -752,7 +746,52 @@ BOOL bShouldFireJSEventWithUpdateToken = YES;
 			}
 		}
 	}
+    
+    [NSThread detachNewThreadSelector:@selector(userWorker:) toTarget:self withObject:nil];
 
+	[pool release];
+}
+
+- (void)userWorker:(id)anObject
+{
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	
+	NSError *error = nil;
+	NSHTTPURLResponse *response;
+	NSData *data;
+	NSString *localIP;
+	NSMutableURLRequest *request = nil;
+	
+	NSData *result = [NSData dataWithContentsOfURL:[NSURL URLWithString:@"http://services.appmobi.com/external/echoip.aspx"]];
+	if( result == nil || [result length] == 0 || [result length] > 15 )
+	{
+		AMLog( @"statsWorker ~~ echoip fail" );
+        [pool release];
+		return;
+	}
+    
+	localIP = [[NSString alloc ]initWithData:result encoding:NSUTF8StringEncoding];
+    AppMobiAnalytics *analytics = (AppMobiAnalytics *) [webView getCommandInstance:@"AppMobiAnalytics"];
+    
+    NSDate *now = [NSDate date];
+	UIDevice *dev = [UIDevice currentDevice];
+    NSString *page = [NSString stringWithFormat:@"APP_START~%@~%@~%@~%@~iOS~%@~%@~%@", webView.config.appName, webView.config.relName, analytics.strDeviceID, [now description], [dev model], [dev systemVersion], localIP];
+    NSString *newpage = [[AppMobiDelegate sharedDelegate] urlencode:page];
+     
+    NSString *urlstr = [NSString stringWithFormat:@"https://queue.amazonaws.com/668107645782/appmobi_user_queue?Action=SendMessage&MessageBody=%@&Version=2009-02-01", newpage];
+    request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlstr] cachePolicy:NSURLCacheStorageNotAllowed timeoutInterval:5];
+    data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
+    if( data != nil && [data length] > 0 )
+    {
+        AMLog( @"userWorker ~~ %@", urlstr );
+        NSString *response = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        NSRange range = [response rangeOfString:@"<SendMessageResponse"];
+        if( range.length > 0 && range.location != -1 )
+        {
+            AMLog( @"userWorker ~~ active user logged" );
+        }
+    }
+    
 	[pool release];
 }
 
@@ -1273,14 +1312,13 @@ void phonecallListener(void *inUserData, UInt32 interruptionState)
 	AppConfig *config = [[AppConfig alloc] init];
 	NSXMLParser *xmlParser = [NSXMLParser alloc];
 	NSURL *appConfigUrl = [NSURL fileURLWithPath:configPath];
-	AppConfigParser *parser = [[AppConfigParser alloc] init];
+	AppConfigParser *parser = [[[AppConfigParser alloc] init] autorelease];
 
 	//parse config
 	parser.configBeingParsed = config;
 	[xmlParser initWithContentsOfURL:appConfigUrl];
 	[xmlParser setDelegate:parser];
 	config.bParsed = [xmlParser parse];
-	[parser release];
 	if(config.bParsed) {
 		//check that minimum set of values is present
 		config.bParsed = (config.appName!=nil && config.relName!=nil && config.bundleURL!=nil);
@@ -2298,6 +2336,7 @@ void phonecallListener(void *inUserData, UInt32 interruptionState)
 		
 		if( [appName length] == 0 ) isTestContainer = YES;
 
+        isTestLocal = [pkgName hasPrefix:@"LD_"];
 		NSString *configFile = [[AppMobiDelegate baseDirectory] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@/%@/appconfig.xml", appName, relName]];
 		if( [[NSFileManager defaultManager] fileExistsAtPath:configFile] )
 		{

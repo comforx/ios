@@ -20,6 +20,17 @@
 
 @implementation AppMobiPlayer
 
+NSMutableDictionary *testLocalCached = nil;
+
+- (id)initWithWebView:(AppMobiWebView *)webview
+{
+	self = (AppMobiPlayer *) [super initWithWebView:webview];
+	
+    if( testLocalCached == nil ) testLocalCached = [[NSMutableDictionary alloc] init];
+	
+	return self;
+}
+
 - (void)show:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 
@@ -160,8 +171,39 @@
 	[vc getPlayerView].lastPlaying = [strStationURL copy];
 }
 
+- (void)cacheSoundLocal:(NSString *)strRelativePath
+{
+    NSString *fullPath = [NSString stringWithFormat:@"%@/%@", webView.config.appDirectory, strRelativePath];
+    
+    BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:fullPath];
+    BOOL fileCached = ( [testLocalCached objectForKey:strRelativePath] != nil );
+    if( fileExists == NO || fileCached == NO )
+    {
+        NSString *urlString = [[[webView request] URL] description];
+        NSRange range = [urlString rangeOfString:@"/" options:NSBackwardsSearch];
+		if( range.location != NSNotFound )
+        {
+			NSString *testLocalRoot = [urlString substringToIndex:range.location];
+            NSString *testLocalUrl = [NSString stringWithFormat:@"%@/%@", testLocalRoot, strRelativePath];
+
+            NSRange dirrange = [fullPath rangeOfString:@"/" options:NSBackwardsSearch];
+            NSString *testLocalPath = [fullPath substringToIndex:dirrange.location];
+
+            NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:testLocalUrl]];
+            if( data != nil && [data length] > 0 )
+            {
+                [testLocalCached setObject:strRelativePath forKey:strRelativePath];                
+                [[NSFileManager defaultManager] createDirectoryAtPath:testLocalPath withIntermediateDirectories:YES attributes:nil error:nil];
+                [[NSFileManager defaultManager] removeItemAtPath:fullPath error:nil];
+                [[NSFileManager defaultManager] createFileAtPath:fullPath contents:data attributes:nil];
+            }
+        }
+    }
+}
+
 - (void)playSound:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
 	NSString *strRelativePath = (NSString *)[arguments objectAtIndex:0];
+    if( [[AppMobiDelegate sharedDelegate] isTestLocal] == YES ) [self cacheSoundLocal:strRelativePath];
 	
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[[vc getPlayerView] playSound:strRelativePath];
@@ -169,6 +211,7 @@
 
 - (void)loadSound:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
 	NSString *strRelativePath = (NSString *)[arguments objectAtIndex:0];
+    if( [[AppMobiDelegate sharedDelegate] isTestLocal] == YES ) [self cacheSoundLocal:strRelativePath];
 	
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[[vc getPlayerView] loadSound:strRelativePath];
@@ -183,7 +226,9 @@
 
 - (void)startAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
 	NSString *strRelativePath = (NSString *)[arguments objectAtIndex:0];
-	BOOL doesLoop = ([arguments count] > 1)?[[arguments objectAtIndex:1] boolValue]:NO; 
+    if( [[AppMobiDelegate sharedDelegate] isTestLocal] == YES ) [self cacheSoundLocal:strRelativePath];
+	BOOL doesLoop = ([arguments count] > 1)?[[arguments objectAtIndex:1] boolValue]:NO;
+	
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[[vc getPlayerView] startAudio:strRelativePath withLooping:doesLoop];
 	[vc getPlayerView].lastPlaying = [strRelativePath copy];	

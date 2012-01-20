@@ -182,6 +182,13 @@ UITextField* textBeingEdited = nil;
     }
 	
 	CGRect frame = [[UIScreen mainScreen] applicationFrame];
+    BOOL ispt = (self.interfaceOrientation == UIInterfaceOrientationPortraitUpsideDown || self.interfaceOrientation == UIInterfaceOrientationPortrait);
+	if( ispt == NO )
+	{
+		frame = CGRectMake( 0, 0, frame.size.height, frame.size.width );
+    }
+    
+    [DirectCanvas setLandscapeMode:!ispt];
 	if( [[AppMobiDelegate sharedDelegate] isWebContainer] == YES )
 	{
 		directCanvas = [[DirectCanvas alloc] initWithView:appView andFrame:CGRectMake( 0, 20, frame.size.width, frame.size.height )];
@@ -390,7 +397,7 @@ UITextField* textBeingEdited = nil;
 {
 	if( [fixedOrientation compare:@"any"] != NSOrderedSame )
 	{
-        NSLog(@"checkForWrongOrientation");
+        NSLog(@"checkForWrongOrientation - %d", self.interfaceOrientation);
 		BOOL landscape = ( self.interfaceOrientation == UIInterfaceOrientationLandscapeLeft ||
 						   self.interfaceOrientation == UIInterfaceOrientationLandscapeRight );
 		if( [fixedOrientation compare:@"landscape"] == NSOrderedSame && landscape != YES )

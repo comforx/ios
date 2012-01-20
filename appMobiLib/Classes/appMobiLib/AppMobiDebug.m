@@ -15,8 +15,8 @@
 {
     NSString* message = [arguments objectAtIndex:0];
     NSString* log_level = @"INFO";
-    if ([options objectForKey:@"logLevel"])
-        log_level = [options objectForKey:@"logLevel"];
+    if ([arguments count]>1)
+        log_level = [arguments objectAtIndex:1];
 
     AMLog(@"[%@] %@", log_level, message);
 }

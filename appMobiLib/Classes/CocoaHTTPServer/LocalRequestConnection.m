@@ -24,7 +24,7 @@
 	NSString *host = [headers objectForKey:@"Host"];
 	
 	//only accept requests from localhost
-	if (host==nil || [host hasPrefix:@"localhost"] == NO) {
+	if (host==nil || ( [host hasPrefix:@"localhost"] == NO && [host hasPrefix:@"127.0.0.1"] == NO ) ) {
 		NSLog(@"HTTP Server: Error 403 - Forbidden");
 		
 		// Status Code 403 - Forbidden

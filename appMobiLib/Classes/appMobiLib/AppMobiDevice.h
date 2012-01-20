@@ -34,5 +34,5 @@
 - (void)closeTab:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)startManifestCaching:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)endManifestCaching:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
-
+- (void)mainViewExecute:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 @end

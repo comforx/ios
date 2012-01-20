@@ -337,7 +337,7 @@
 	}
 	else {
 		// There's no method to call, so throw an error.
-		AMLog(@"Class method '%@' not defined in class '%@'", fullMethodName, command.className);
+		AMLog(@"BRIDGE ERROR *** Class method '%@' not defined in class '%@'.", fullMethodName, command.className);
 	}
 	[fullMethodName release];
 	
@@ -350,8 +350,15 @@
     if( obj == nil )
 	{
 		obj = [[NSClassFromString(className) alloc] initWithWebView:self];
-        [commandObjects setObject:obj forKey:className];
-		[obj release];
+        if( obj != nil )
+        {
+            [commandObjects setObject:obj forKey:className];
+            [obj release];
+        }
+        else
+        {
+            AMLog(@"BRIDGE ERROR *** Class '%@' not defined.", className);
+        }
     }
     return obj;
 }

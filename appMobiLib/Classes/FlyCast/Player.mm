@@ -698,7 +698,7 @@ void mypReadShoutcastPackets(CFReadStreamRef stream, CFStreamEventType event, vo
 	range = [headers rangeOfString:@"icy-br:"];
 	strTemp = [headers substringFromIndex:range.location + range.length];
 	range = [strTemp rangeOfString:@"\r\n"];
-	if( range.length == 0 )
+	if( range.length != 0 )
 		strValue = [strTemp substringWithRange:NSMakeRange(0,range.location)];
 	else
 		strValue = [[strTemp copy] autorelease];
@@ -714,7 +714,7 @@ void mypReadShoutcastPackets(CFReadStreamRef stream, CFStreamEventType event, vo
 	NSRange range2;
 
 	range1 = [headers rangeOfString:@"StreamTitle="];
-	range2 = [headers rangeOfString:@";StreamUrl="];
+	range2 = [headers rangeOfString:@";"];
 	if( range1.length != 0 && range2.length != 0 )
 	{
 		infoPtr->wtrack.artist = [headers substringWithRange:NSMakeRange(range1.location+12, range2.location-range1.location-12)];

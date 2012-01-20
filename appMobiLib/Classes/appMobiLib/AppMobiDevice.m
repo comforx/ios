@@ -438,14 +438,44 @@
 		extras = [extras stringByAppendingFormat:@"statusText:'%@',", [self getStatusText:[response statusCode]]];
 		extras = [extras stringByAppendingFormat:@"headers: {"];
 		
-		NSDictionary *allheaders = [response allHeaderFields];
+		NSDictionary *allheaders = [response allHeaderFields];        
 		NSArray *allkeys = [allheaders allKeys];
 		for( int i = 0; i < [allkeys count]; i++ )
 		{
 			NSString *key = [allkeys objectAtIndex:i];
 			NSString *value = [allheaders objectForKey:key];
-			value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"\\'"];
-			extras = [extras stringByAppendingFormat:@"'%@':'%@',", key, value];
+            
+            if( [key compare:@"Set-Cookie" options:NSCaseInsensitiveSearch] == NSOrderedSame )
+            {
+                value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"\\'"];
+                extras = [extras stringByAppendingFormat:@"'%@':'%@',", key, value];
+                NSString *newvalue = @"[";
+                
+                NSRange rangeC = [value rangeOfString:@"," options:NSCaseInsensitiveSearch];
+                NSRange rangeE = [value rangeOfString:@"expires=" options:NSCaseInsensitiveSearch];
+                while( rangeC.location != NSNotFound && rangeC.length == 1 )
+                {
+                    if( rangeE.location != NSNotFound && rangeC.location == rangeE.location + 11 )
+                        rangeC = [value rangeOfString:@"," options:NSCaseInsensitiveSearch range:NSMakeRange(rangeC.location+1, [value length] - (rangeC.location+1))];
+                    
+                    if( rangeC.location == NSNotFound ) continue;
+                    
+                    newvalue = [newvalue stringByAppendingFormat:@"'%@',", [value substringToIndex:rangeC.location]];
+                    value = [value substringFromIndex:rangeC.location+2];
+                    
+                    rangeC = [value rangeOfString:@","];
+                    rangeE = [value rangeOfString:@"expires=" options:NSCaseInsensitiveSearch];                
+                }
+                
+                newvalue = [newvalue stringByAppendingFormat:@"'%@'", value];
+                newvalue = [newvalue stringByAppendingString:@"]"];     
+                extras = [extras stringByAppendingFormat:@"'All-Cookies':%@,", newvalue];
+            }
+            else
+            {
+                value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"\\'"];
+                extras = [extras stringByAppendingFormat:@"'%@':'%@',", key, value];
+            }
 		}
 		extras = [extras stringByAppendingFormat:@"} }"];
 		
@@ -492,12 +522,17 @@
 	if( url == nil || [url length] == 0 ) return;
 	
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
-	[vc showRemote:url forApp:webView.config atPort:CGRectMake(closePortX,closePortY,closeW,closeH) atLand:CGRectMake(closeLandY,closeLandY,closeW,closeH)];
+	[vc showRemote:url forApp:webView.config atPort:CGRectMake(closePortX,closePortY,closeW,closeH) atLand:CGRectMake(closeLandX,closeLandY,closeW,closeH)];
 }
 
 - (void)closeRemoteSite:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[vc hideRemote:nil];
+}
+
+- (void)mainViewExecute:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
+	NSString *msg = (NSString *)[arguments objectAtIndex:0];
+	[[[AppMobiViewController masterViewController] getActiveWebView] performSelectorOnMainThread:@selector(injectJS:) withObject:msg waitUntilDone:NO];
 }
 
 - (void)closeTab:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
