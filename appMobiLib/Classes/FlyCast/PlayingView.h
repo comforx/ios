@@ -41,6 +41,7 @@
 	BOOL bJunk;
 	BOOL bWarnBuffering;
 	BOOL bShowUpgrade;
+	int polyMaxMode;
 	
 	NSMutableArray *allTracklists;
 	NSMutableArray *allTracks;
@@ -156,6 +157,7 @@
 @property (readonly) AVAudioPlayer *adPlayer;
 @property (readonly) BOOL bStarting;
 @property (nonatomic, retain) NSString *lastPlaying;
+@property (nonatomic) int polyMaxMode;
 
 + (id)currentPlayingView;
 - (void)clearResume;
@@ -163,7 +165,9 @@
 - (void)playVideo:(NSURL *)url;
 - (void)playSound:(NSString *)file;
 - (void)loadSound:(NSString *)file;
+- (void)loadSound:(NSString *)file withPolyphony:(int)count;
 - (void)unloadSound:(NSString *)file;
+- (void)unloadAllSounds;
 - (void)startAudio:(NSString *)file withLooping:(BOOL)doesLoop;
 - (void)toggleAudio;
 - (void)stopAudio;

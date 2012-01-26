@@ -8,6 +8,7 @@
 #define DIRECTCANVAS_RELEASE_MASTER_JS @"game.min.js"
 
 NSString * JSValueToNSString( JSContextRef ctx, JSValueRef v );
+double JSValueToNumberFast( JSContextRef ctx, JSValueRef v );
 
 @protocol TouchDelegate
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event;

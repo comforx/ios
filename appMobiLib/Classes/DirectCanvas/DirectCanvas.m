@@ -22,6 +22,18 @@ NSString * JSValueToNSString( JSContextRef ctx, JSValueRef v ) {
 	return string;
 }
 
+double JSValueToNumberFast( JSContextRef ctx, JSValueRef v ) {
+	unsigned char * bytes = ((unsigned char *) v) + 8;
+	unsigned char * tagBytes = ((unsigned char *) v) + 12;
+	int32_t unionTag = *((int32_t*)tagBytes);
+	if( unionTag < 0xfffffff8 ) {
+		return *((double *) bytes);
+	}
+	else {
+		return *((int32_t *) bytes);
+	}
+}
+
 JSValueRef directCanvas_getNativeClass(JSContextRef ctx, JSObjectRef object, JSStringRef propertyNameJS, JSValueRef* exception) {
     //handle props assigned in script
     JSPropertyNameArrayRef props = JSObjectCopyPropertyNames(ctx, object);

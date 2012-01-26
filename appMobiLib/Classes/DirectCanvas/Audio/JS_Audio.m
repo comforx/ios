@@ -10,28 +10,22 @@
 		
 		if( argc < 1 ) return self; // Maybe just a dummy for canPlayType?
 		
-		// Is this source already loaded? Check in the manager's sources dictionary
 		path = [JSValueToNSString(ctx, argv[0]) retain];
-		source = [[[OpenALManager instance].sources objectForKey:path] retain];
-		
-		if( !source ) {
 			
-			// Decide whether to load the sound as OpenAL or AVAudioPlayer source
-			NSString * fullPath = [DirectCanvas pathForResource:path];
-			unsigned long long size = [[[NSFileManager defaultManager] 
-				attributesOfItemAtPath:fullPath error:nil] fileSize];
-				
-			if( size <= JS_AUDIO_OPENAL_MAX_SIZE ) {
-				NSLog(@"Loading Sound(OpenAL): %@", path);
-				source = [[OpenALSource alloc] initWithPath:fullPath];
-			}
-			else {
-				NSLog(@"Loading Sound(AVAudio): %@", path);
-				source = [[AVAudioPlayerSource alloc] initWithPath:fullPath];
-			}
+		// Decide whether to load the sound as OpenAL or AVAudioPlayer source
+		NSString * fullPath = [DirectCanvas pathForResource:path];
+		unsigned long long size = [[[NSFileManager defaultManager] 
+			attributesOfItemAtPath:fullPath error:nil] fileSize];
 			
-			[[OpenALManager instance].sources setObject:source forKey:path];
+		if( size <= JS_AUDIO_OPENAL_MAX_SIZE ) {
+			//NSLog(@"Loading Sound(OpenAL): %@", path);
+			source = [[OpenALSource alloc] initWithPath:fullPath];
 		}
+		else {
+			//NSLog(@"Loading Sound(AVAudio): %@", path);
+			source = [[AVAudioPlayerSource alloc] initWithPath:fullPath];
+		}
+			
 	}
 	return self;
 }
@@ -103,7 +97,7 @@ JS_GET(JS_Audio, volume, ctx) {
 }
 
 JS_SET(JS_Audio, volume, ctx, value) {
-	volume = JSValueToNumber(ctx, value, NULL);
+	volume = JSValueToNumberFast(ctx, value);
 	[source setVolume:MIN(1,MAX(volume,0))];
 }
 
@@ -112,17 +106,12 @@ JS_GET(JS_Audio, currentTime, ctx) {
 }
 
 JS_SET(JS_Audio, currentTime, ctx, value) {
-	float time = JSValueToNumber(ctx, value, NULL);
+	float time = JSValueToNumberFast(ctx, value);
 	[source setCurrentTime:time];
 }
 
 
 - (void)dealloc {
-	// If the retainCount is 2, only this instance and the .sources dictionary
-	// still retain the source - so remove it from the dict and delete it completely
-	if( source && [source retainCount] == 2 ) {
-		[[OpenALManager instance].sources removeObjectForKey:path];
-	}
 	[source release];
 	[path release];
 	

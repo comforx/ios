@@ -39,7 +39,7 @@
 @synthesize adPlayer;
 @synthesize videoPlayer;
 @synthesize bStarting;
-
+@synthesize polyMaxMode;
 
 #define radians(degrees) (degrees * M_PI/180)
 
@@ -1460,21 +1460,10 @@ NSString *strVers = nil;
     NSMutableArray * players = [mySoundPool objectForKey:file];
     if (players == nil) {
         //create and add if needed
-        players = [NSMutableArray arrayWithCapacity:4];
+        players = [NSMutableArray arrayWithCapacity:1];
         [mySoundPool setObject:players forKey:file];
-    }
-    
-    //get a player that isnt already playing
-    AVAudioPlayer *player = nil;
-    for(int i=0;i<[players count];i++) {
-        if (!((AVAudioPlayer *)[players objectAtIndex:i]).playing) {
-            player = [players objectAtIndex:i];
-            break;
-        }
-    }
-    if (player==nil) {
-        //create, prepare and add if needed
-        
+		
+        //create, prepare and add player
         AppMobiWebView *webview = [[AppMobiViewController masterViewController] getActiveWebView];
 		NSString *fullPath = [NSString stringWithFormat:@"%@/%@", webview.config.appDirectory, file];
         if( [[NSFileManager defaultManager] fileExistsAtPath:fullPath] == NO && [DirectCanvas instance].remotePath != nil )
@@ -1489,23 +1478,70 @@ NSString *strVers = nil;
 			[[AppMobiViewController masterViewController] performSelectorOnMainThread:@selector(fireEvent:) withObject:@"appMobi.player.sound.error" waitUntilDone:NO];
 			return nil;
 		}
-
-        player = [[[AVAudioPlayer alloc] initWithData:data error:nil] autorelease];
+		
+        AVAudioPlayer *player = [[[AVAudioPlayer alloc] initWithData:data error:nil] autorelease];
         [player prepareToPlay];
         [players addObject:player];
     }
     
+    //try get a player that isnt already playing
+    AVAudioPlayer *player = nil;
+    for(int i=0;i<[players count];i++) {
+		player = [players objectAtIndex:i];
+        if (player.playing == NO) {
+            break;
+        }
+    }
+	
     return player;
+}
+
+- (void)preloadPlayersIntoPool:(NSString *)file withCount:(int)count{
+    //create array of players
+    NSMutableArray * players = [NSMutableArray arrayWithCapacity:count];
+	[mySoundPool setObject:players forKey:file];
+
+	//create, prepare and add 
+	//note that this overwrites any dynamically or previously created players in the pool
+	AppMobiWebView *webview = [[AppMobiViewController masterViewController] getActiveWebView];
+	NSString *fullPath = [NSString stringWithFormat:@"%@/%@", webview.config.appDirectory, file];
+	if( [[NSFileManager defaultManager] fileExistsAtPath:fullPath] == NO && [DirectCanvas instance].remotePath != nil )
+	{
+		fullPath = [NSString stringWithFormat:@"%@/%@", [DirectCanvas instance].remotePath, file];
+	}
+	
+	NSData *data = [fullPath hasPrefix:@"http"] ? [NSData dataWithContentsOfURL:[NSURL URLWithString:fullPath]] : [NSData dataWithContentsOfFile:fullPath];
+	
+	if( data == nil || [data length] == 0 )
+	{
+		[[AppMobiViewController masterViewController] performSelectorOnMainThread:@selector(fireEvent:) withObject:@"appMobi.player.sound.error" waitUntilDone:NO];
+	}
+
+	for(int i=0;i<count;i++) {
+		AVAudioPlayer *player = [[[AVAudioPlayer alloc] initWithData:data error:nil] autorelease];
+		[player prepareToPlay];
+		[players addObject:player];
+	}
 }
 
 - (void)loadSound:(NSString *)file
 {
-    [self getPlayerFromPool:file];
+    [self preloadPlayersIntoPool:file withCount:1];
+}
+
+- (void)loadSound:(NSString *)file withPolyphony:(int)count
+{
+    [self preloadPlayersIntoPool:file withCount:count];
 }
 
 - (void)unloadSound:(NSString *)file
 {
     [mySoundPool removeObjectForKey:file];
+}
+
+- (void)unloadAllSounds
+{
+    [mySoundPool removeAllObjects];
 }
 
 - (void)playSound:(NSString *)file
@@ -1514,14 +1550,19 @@ NSString *strVers = nil;
 	
 	if( player != nil )
 	{
-		if( !player.playing )
+		//we could add mode behavior here to add another player, restart or drop this request - for now we default to restart
+		if( player.playing == NO )
 		{
 			[player play];
 		}
 		else
 		{
-            //should not get here anymore
-			player.currentTime = 0;
+			if(polyMaxMode == 0) {
+				AMLog(@"all players busy for %@", file);
+			} else {
+				[player stop];
+				[player play];
+			}
 		}
 	}
 }
@@ -1569,6 +1610,7 @@ NSString *strVers = nil;
 	{
 		adPlayer.numberOfLoops = -1;
 	}
+	
 	[adPlayer play];
 	
 	[[AppMobiViewController masterViewController] performSelectorOnMainThread:@selector(fireEvent:) withObject:@"appMobi.player.audio.start" waitUntilDone:NO];

@@ -1,5 +1,6 @@
 #import "OpenALSource.h"
 #import "DirectCanvas.h"
+#import "OpenALManager.h"
 
 @implementation OpenALSource
 
@@ -19,23 +20,33 @@
 	ALsizei size;
 	ALsizei freq;
 	
-	NSURL * url = [NSURL fileURLWithPath:path];
-	void * data = [self getAudioDataWithURL:url size:&size format:&format rate:&freq];
+	//check if the data from this path is cached
+	NSNumber *alreadyBuffered = [[OpenALManager instance].buffers objectForKey:path];
+	
+	if(alreadyBuffered!=nil) {
+		bufferId = [alreadyBuffered intValue];
+	} 
+	else {
+		NSURL * url = [NSURL fileURLWithPath:path];
+		void * data = [self getAudioDataWithURL:url size:&size format:&format rate:&freq];
 
-	if( !data ) {
-		return;
-	}
-	
-	alGenBuffers( 1, &bufferId );
-	alBufferData( bufferId, format, data, size, freq ); 
-	
+		if( !data ) {
+			return;
+		}
+		
+		alGenBuffers( 1, &bufferId );
+		alBufferData( bufferId, format, data, size, freq ); 
+		free(data);
+		
+		//add to cache
+		[[OpenALManager instance].buffers setObject:[NSNumber numberWithInt:bufferId] forKey:path];
+	}	
 	
 	alGenSources(1, &sourceId); 
 	alSourcei(sourceId, AL_BUFFER, bufferId);
 	alSourcef(sourceId, AL_PITCH, 1.0f);
 	alSourcef(sourceId, AL_GAIN, 1.0f);
 
-	free(data);
 	return;
 }
 
@@ -173,9 +184,11 @@ Exit:
 	if( sourceId ) {
 		alDeleteSources(1, &sourceId);
 	}
-	if( bufferId ) {
-		alDeleteBuffers(1, &bufferId);
-	}
+//check if this is the last source using this buffer and unload?
+//just leave cached for now...
+//	if( bufferId ) {
+//		alDeleteBuffers(1, &bufferId);
+//	}
 	
 	[super dealloc];
 }

@@ -6,11 +6,11 @@
 @interface OpenALManager : NSObject {
 	ALCcontext * context;
 	ALCdevice * device;
-	NSMutableDictionary *sources;
+	NSMutableDictionary *buffers;
 }
 
 + (OpenALManager *)instance;
 
-@property (readonly) NSMutableDictionary * sources;
+@property (readonly) NSMutableDictionary * buffers;
 
 @end

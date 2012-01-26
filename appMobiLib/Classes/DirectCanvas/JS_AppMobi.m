@@ -99,6 +99,40 @@ JS_FUNC( JS_AppMobi, executeJavascriptInWebView, ctx, argc, argv ) {
 
 // ----------------------------------------------------------
 // sounds
+JS_FUNC( JS_AppMobi, startBackgroundSound, ctx, argc, argv ) {
+	if( argc < 1 || !JSValueIsString(ctx, argv[0]) ) return NULL;
+	if( argc > 1 && !JSValueIsBoolean(ctx, argv[1]) ) return NULL;
+	
+	JSStringRef strRelativeFileURLjs = JSValueToStringCopy( ctx, argv[0], NULL );
+	CFStringRef strRelativeFileURL = JSStringCopyCFString( kCFAllocatorDefault, strRelativeFileURLjs );
+	
+	BOOL shouldLoop = argc>1?JSValueToBoolean(ctx, argv[1]):NO;
+	
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] startAudio:(NSString *)strRelativeFileURL withLooping:shouldLoop];
+	
+	CFRelease( strRelativeFileURL );
+	JSStringRelease( strRelativeFileURLjs );
+	
+	return NULL;
+}
+
+JS_FUNC( JS_AppMobi, toggleBackgroundSound, ctx, argc, argv ) {
+	
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] toggleAudio];
+	
+	return NULL;
+}
+
+JS_FUNC( JS_AppMobi, stopBackgroundSound, ctx, argc, argv ) {
+	
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] stopAudio];
+	
+	return NULL;
+}
+
 JS_FUNC( JS_AppMobi, loadSound, ctx, argc, argv ) {
 	if( argc != 1 || !JSValueIsString(ctx, argv[0]) ) return NULL;
 	
@@ -107,6 +141,32 @@ JS_FUNC( JS_AppMobi, loadSound, ctx, argc, argv ) {
 	
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[[vc getPlayerView] loadSound:(NSString *)strRelativeFileURL];
+	
+	CFRelease( strRelativeFileURL );
+	JSStringRelease( strRelativeFileURLjs );
+	
+	return NULL;
+}
+
+JS_FUNC( JS_AppMobi, togglePolySoundMode, ctx, argc, argv ) {
+//	
+//	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+//	[vc getPlayerView].polyMaxMode = (++[vc getPlayerView].polyMaxMode)%2;
+//	
+	return NULL;
+}
+
+
+JS_FUNC( JS_AppMobi, loadPolySound, ctx, argc, argv ) {
+	if( argc != 2 || !JSValueIsString(ctx, argv[0]) || !JSValueIsNumber(ctx, argv[1]) ) return NULL;
+	
+	JSStringRef strRelativeFileURLjs = JSValueToStringCopy( ctx, argv[0], NULL );
+	CFStringRef strRelativeFileURL = JSStringCopyCFString( kCFAllocatorDefault, strRelativeFileURLjs );
+	
+	int count = JSValueToNumberFast( ctx, argv[1] );
+	
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] loadSound:(NSString *)strRelativeFileURL withPolyphony:count];
 	
 	CFRelease( strRelativeFileURL );
 	JSStringRelease( strRelativeFileURLjs );
@@ -129,6 +189,31 @@ JS_FUNC( JS_AppMobi, playSound, ctx, argc, argv ) {
 	
 	return NULL;
 }
+
+JS_FUNC( JS_AppMobi, unloadSound, ctx, argc, argv ) {
+	if( argc != 1 || !JSValueIsString(ctx, argv[0]) ) return NULL;
+	
+	JSStringRef strRelativeFileURLjs = JSValueToStringCopy( ctx, argv[0], NULL );
+	CFStringRef strRelativeFileURL = JSStringCopyCFString( kCFAllocatorDefault, strRelativeFileURLjs );
+	
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] unloadSound:(NSString *)strRelativeFileURL];
+    
+	
+	CFRelease( strRelativeFileURL );
+	JSStringRelease( strRelativeFileURLjs );
+	
+	return NULL;
+}
+
+JS_FUNC( JS_AppMobi, unloadAllSounds, ctx, argc, argv ) {
+	
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] unloadAllSounds];
+    
+	return NULL;
+}
+
 
 // ----------------------------------------------------------
 // timeouts/intervals

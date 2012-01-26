@@ -14,6 +14,7 @@
 // to the particular C callback function - this way we can later inflect the objc class
 // and gather all function pointers.
 
+id objc_msgSend(id theReceiver, SEL theSelector, ...);
 
 // Function - use with JS_FUNC( JS_ClassName, functName, ctx, argc, argv ) { ... }
 #define JS_FUNC(CLASS, NAME, CTX_NAME, ARGC_NAME, ARGV_NAME) \
