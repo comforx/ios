@@ -1481,6 +1481,11 @@ NSString *strVers = nil;
 		
         AVAudioPlayer *player = [[[AVAudioPlayer alloc] initWithData:data error:nil] autorelease];
         [player prepareToPlay];
+		int vol = [player volume];
+		[player setVolume:0.0];
+		[player play];
+		[player stop];
+		[player setVolume:vol];
         [players addObject:player];
     }
     
@@ -1520,6 +1525,13 @@ NSString *strVers = nil;
 	for(int i=0;i<count;i++) {
 		AVAudioPlayer *player = [[[AVAudioPlayer alloc] initWithData:data error:nil] autorelease];
 		[player prepareToPlay];
+		if (i==0) {
+			int vol = [player volume];
+			[player setVolume:0.0];
+			[player play];
+			[player stop];
+			[player setVolume:vol];
+		}
 		[players addObject:player];
 	}
 }
