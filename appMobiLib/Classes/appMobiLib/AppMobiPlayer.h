@@ -10,6 +10,8 @@
 #import "AppMobiCommand.h"
 
 @interface AppMobiPlayer : AppMobiCommand {
+	NSTimer * audioUpdateTimer;
+	NSLock *lkUpdateAudioData;
 }
 
 - (void)show:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
@@ -23,6 +25,8 @@
 - (void)startAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)stopAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)setAudioCurrentTime:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
+- (void)startUpdatingAudioTime:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
+- (void)stopUpdatingAudioTime:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)toggleAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)setColors:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)play:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;

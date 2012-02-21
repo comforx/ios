@@ -24,6 +24,8 @@ NSMutableDictionary *testLocalCached = nil;
 
 - (id)initWithWebView:(AppMobiWebView *)webview
 {
+	lkUpdateAudioData = [[NSLock alloc] init];
+	
 	self = (AppMobiPlayer *) [super initWithWebView:webview];
 	
     if( testLocalCached == nil ) testLocalCached = [[NSMutableDictionary alloc] init];
@@ -210,11 +212,21 @@ NSMutableDictionary *testLocalCached = nil;
 }
 
 - (void)loadSound:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
-	NSString *strRelativePath = (NSString *)[arguments objectAtIndex:0];
-    if( [[AppMobiDelegate sharedDelegate] isTestLocal] == YES ) [self cacheSoundLocal:strRelativePath];
-	
-	AppMobiViewController *vc = [AppMobiViewController masterViewController];
-	[[vc getPlayerView] loadSound:strRelativePath];
+	if(arguments.count==1) {
+		NSString *strRelativePath = (NSString *)[arguments objectAtIndex:0];
+		if( [[AppMobiDelegate sharedDelegate] isTestLocal] == YES ) [self cacheSoundLocal:strRelativePath];
+		
+		AppMobiViewController *vc = [AppMobiViewController masterViewController];
+		[[vc getPlayerView] loadSound:strRelativePath];
+	} else {
+		NSString *strRelativePath = (NSString *)[arguments objectAtIndex:0];
+		int count = [(NSString *)[arguments objectAtIndex:1] intValue];
+		
+		if( [[AppMobiDelegate sharedDelegate] isTestLocal] == YES ) [self cacheSoundLocal:strRelativePath];
+		
+		AppMobiViewController *vc = [AppMobiViewController masterViewController];
+		[[vc getPlayerView] loadSound:strRelativePath withPolyphony:count];
+	}
 }
 
 - (void)unloadSound:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
@@ -222,6 +234,11 @@ NSMutableDictionary *testLocalCached = nil;
 	
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[[vc getPlayerView] unloadSound:strRelativePath];
+}
+
+- (void)unloadAllSounds:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	[[vc getPlayerView] unloadAllSounds];
 }
 
 - (void)startAudio:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
@@ -246,9 +263,39 @@ NSMutableDictionary *testLocalCached = nil;
 }
 
 - (void)setAudioCurrentTime:(NSMutableArray *)arguments withDict:(NSMutableDictionary *)options {
+	[lkUpdateAudioData lock];
 	float time = [[arguments objectAtIndex:0] floatValue];
 	AppMobiViewController *vc = [AppMobiViewController masterViewController];
 	[[vc getPlayerView] setAudioCurrentTime:time];
+	NSString * js = [NSString stringWithFormat:
+					 @"AppMobi.player.audioInfo = new AppMobi.AudioInfo(%f, %f);var e = document.createEvent('Events');e.initEvent('appMobi.player.audio.currenttime.set',true,true);document.dispatchEvent(e);", 
+					 [[vc getPlayerView] getAudioCurrentTime], [[vc getPlayerView] getAudioCurrentLength]];
+	[webView injectJS:js];
+	[lkUpdateAudioData unlock];
+}
+
+- (void)updateAudioTime {
+	[lkUpdateAudioData lock];
+	AppMobiViewController *vc = [AppMobiViewController masterViewController];
+	NSString * js = [NSString stringWithFormat:
+					 @"AppMobi.player.audioInfo = new AppMobi.AudioInfo(%f, %f);", 
+					 [[vc getPlayerView] getAudioCurrentTime], [[vc getPlayerView] getAudioCurrentLength]];
+	[webView injectJS:js];
+	[lkUpdateAudioData unlock];
+}
+
+- (void)startUpdatingAudioTime:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
+	if(audioUpdateTimer!=nil) {
+		[audioUpdateTimer invalidate];
+	}
+	float frequency = [[arguments objectAtIndex:0] floatValue]/1000.0;
+	audioUpdateTimer = [NSTimer scheduledTimerWithTimeInterval:frequency target:self selector:@selector(updateAudioTime) userInfo:nil repeats:YES];
+}
+
+- (void)stopUpdatingAudioTime:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
+	if(audioUpdateTimer!=nil) {
+		[audioUpdateTimer invalidate];
+	}
 }
 
 - (void)setColors:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {

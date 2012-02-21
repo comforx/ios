@@ -1637,6 +1637,16 @@ NSString *strVers = nil;
 	
 }
 
+- (float)getAudioCurrentTime 
+{
+	return (adPlayer != nil)?adPlayer.currentTime:0;
+}
+
+- (float)getAudioCurrentLength 
+{
+	return (adPlayer != nil)?adPlayer.duration:0;
+}
+
 -(void)toggleAudio {
 	if(adPlayer != nil) {
 		adPlayer.playing?[adPlayer pause]:[adPlayer play];

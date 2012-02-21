@@ -172,6 +172,8 @@
 - (void)toggleAudio;
 - (void)stopAudio;
 - (void)setAudioCurrentTime:(float)time;
+- (float)getAudioCurrentTime;
+- (float)getAudioCurrentLength;
 - (void)getBackgrounds:(id)sender;
 - (void)createViews:(id)sender;
 - (void)showBusy:(BOOL)show withAd:(BOOL)ad;

@@ -120,12 +120,16 @@ int currentRotation = 0;
 
 - (void)orientationChange:(NSNotification *)notification {	
 	UIDeviceOrientation newOrientation = [[UIDevice currentDevice] orientation];
-	if( 
-		newOrientation != orientation &&
-		UIDeviceOrientationIsLandscape(newOrientation) 
-	) {
+	if( newOrientation != orientation && UIDeviceOrientationIsLandscape(newOrientation) ) {
 		orientation = newOrientation;
-		[UIApplication sharedApplication].statusBarOrientation = newOrientation;
+		/*
+		 //from iOSImpact-0.9
+		 UIInterfaceOrientation interfaceOrientation;
+		 interfaceOrientation = ((orientation == UIDeviceOrientationLandscapeLeft) ?
+		 UIInterfaceOrientationLandscapeRight : UIInterfaceOrientationLandscapeLeft);
+		 
+		 [UIApplication sharedApplication].statusBarOrientation = interfaceOrientation;
+		*/
 		if( CanvasCurrentInstance == self ) {
 			[self prepareThisCanvas];
 		}
@@ -213,7 +217,7 @@ JS_GET(JS_Canvas, globalScale, ctx) {
     
 	//calculate scale based on content width/height vs. display width/height
 	CGFloat deviceWidth, deviceHeight;//480, 300
-	if(UIDeviceOrientationIsLandscape(orientation)) {
+	if([[UIScreen mainScreen] applicationFrame].size.height<deviceHeight < [[UIScreen mainScreen] applicationFrame].size.width) {//landscape
 		deviceWidth = [[UIScreen mainScreen] applicationFrame].size.height;
 		deviceHeight = [[UIScreen mainScreen] applicationFrame].size.width;
 	} else {
@@ -223,27 +227,15 @@ JS_GET(JS_Canvas, globalScale, ctx) {
 	
 	double calcScaleX = deviceWidth/(width*scale), calcScaleY = deviceHeight/(height*scale), calcScale;
 	calcScale = MIN(calcScaleX, calcScaleY);
-	calcScale *= scale;
-	calcScale = (int)(calcScale*100);
-	calcScale /= (double)100;
-	calculatedScale = 1.0;
-	glview.transform = CGAffineTransformMakeScale(calculatedScale, calculatedScale);
-
-	while(calculatedScale<calcScale){
-		calculatedScale+=.01;
-	}
-	while(calculatedScale>calcScale){
-		calculatedScale-=.01;
-	}
+    calculatedScale = calcScale;
 	
-	//calculate frame offset
-	int offsetX = (deviceWidth-(width*scale))/2, offsetY = (deviceHeight-(height*scale))/2;
-    [glview removeFromSuperview];
-    glview.frame = CGRectMake(offsetX, offsetY, width*scale, height*scale);
-    [[DirectCanvas instance] addSubview:glview];    
-	glview.transform = CGAffineTransformMakeScale(calculatedScale, calculatedScale);
-	
-	[self setglDimentionsWithWidth:width Height:height Scale:scale];
+    //calculate frame offset
+    int offsetX = (deviceWidth-(width*scale))/2, offsetY = (deviceHeight-(height*scale))/2;
+    //[glview removeFromSuperview];
+    if( calculatedScale > 1.0 ) glview.transform = CGAffineTransformIdentity;
+    glview.frame = CGRectMake(offsetX, offsetY, (width*scale), (height*scale));
+    glview.transform = CGAffineTransformMakeScale(calculatedScale, calculatedScale);
+    //[[DirectCanvas instance] addSubview:glview];
 }
 	 
 JS_SET(JS_Canvas, globalScale, ctx, value) {

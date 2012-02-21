@@ -329,11 +329,17 @@ AppMobi.addConstructor(function() {
     if (typeof AppMobi.advertising == "undefined") AppMobi.advertising = new AppMobi.Advertising();
 });
 
+AppMobi.AudioInfo = function(currentTime, duration) {
+	this.currentTime = currentTime;
+	this.duration = duration;
+};
+
 /**
  * This class provides access to the appMobiPlayer
  * @constructor
  */
 AppMobi.Player = function() {
+	this.audioInfo = new AppMobi.AudioInfo(0, 0);
 };
 
 AppMobi.Player.prototype.show = function() {
@@ -356,12 +362,16 @@ AppMobi.Player.prototype.playSound = function(strRelativeFileURL) {
     AppMobi.exec("AppMobiPlayer.playSound", strRelativeFileURL);
 };
 
-AppMobi.Player.prototype.loadSound = function(strRelativeFileURL) {
-    AppMobi.exec("AppMobiPlayer.loadSound", strRelativeFileURL);
+AppMobi.Player.prototype.loadSound = function(strRelativeFileURL, count) {
+    AppMobi.exec("AppMobiPlayer.loadSound", strRelativeFileURL, count);
 };
 
 AppMobi.Player.prototype.unloadSound = function(strRelativeFileURL) {
     AppMobi.exec("AppMobiPlayer.unloadSound", strRelativeFileURL);
+};
+
+AppMobi.Player.prototype.unloadAllSounds = function() {
+    AppMobi.exec("AppMobiPlayer.unloadAllSounds");
 };
 
 AppMobi.Player.prototype.startAudio = function(strRelativeFileURL, boolLoop) {
@@ -379,6 +389,24 @@ AppMobi.Player.prototype.stopAudio = function() {
 
 AppMobi.Player.prototype.setAudioCurrentTime = function(time) {
     AppMobi.exec("AppMobiPlayer.setAudioCurrentTime", time);
+};
+
+AppMobi.Player.prototype.getAudioCurrentTime = function(successCallback) {
+	if (typeof successCallback == "function") {
+		successCallback(AppMobi.player.audioInfo);
+	}
+};
+
+AppMobi.Player.prototype.watchAudioCurrentTime = function(successCallback, frequency) {
+	AppMobi.exec("AppMobiPlayer.startUpdatingAudioTime", frequency);
+	return setInterval(function() {
+		AppMobi.player.getAudioCurrentTime(successCallback);
+	}, frequency);
+};
+
+AppMobi.Player.prototype.clearAudioCurrentTimeWatch = function(watchId) {
+	AppMobi.exec("AppMobiPlayer.stopUpdatingAudioTime");
+	clearInterval(watchId);
 };
 
 AppMobi.Player.prototype.play = function() {
@@ -793,7 +821,12 @@ AppMobi.Canvas = function() {
 };
 
 AppMobi.Canvas.prototype.load = function(strRelativeFileURL) {
+	//reset touch forwarding
+    for(eventType in {"touchstart":'',"touchmove":'',"touchend":''}) //TOUCH EVEN FORWARDING CLEANUP
+        document.removeEventListener(eventType, AppMobi.canvas.forwardTouchEvent, false);
+	//show canvas
 	AppMobi.canvas.isHidden = false;
+	//load the script
 	AppMobi.exec("AppMobiCanvas.load", strRelativeFileURL);
 };
 
@@ -816,6 +849,10 @@ AppMobi.Canvas.prototype.eval = function(strJavascript) {
 };
 
 AppMobi.Canvas.prototype.reset = function() {
+	//reset touch forwarding
+    for(eventType in {"touchstart":'',"touchmove":'',"touchend":''}) //TOUCH EVEN FORWARDING CLEANUP
+        document.removeEventListener(eventType, AppMobi.canvas.forwardTouchEvent, false);
+	//reset the canvas
 	AppMobi.exec("AppMobiCanvas.reset");
 };
 
@@ -826,6 +863,40 @@ AppMobi.Canvas.prototype.setFramesPerSecond = function(fps) {
 AppMobi.Canvas.prototype.setFPS = function(fps) {
 	AppMobi.exec("AppMobiCanvas.setFPS", fps);
 };
+
+AppMobi.Canvas.prototype.forwardTouchEvent = function(event)
+{
+    if(this.fwdEvtCounter == undefined) this.fwdEvtCounter = 0;
+    
+    if(true || event.target.tagName == "HTML")//this check should be here to prevent double-events after bubbling, but it seems like events are not bubbling so with the check we dont get most events
+	{
+		var nX, nY;
+		if(event.type=='touchend') {
+			nX = event.changedTouches[0].pageX;
+			nY = event.changedTouches[0].pageY;
+		} else {
+			nX = event.targetTouches[0].pageX;
+			nY = event.targetTouches[0].pageY;
+		}
+		
+        var sendEvent = false;
+        if(event.type == 'touchmove')
+        {
+            this.fwdEvtCounter++;
+            if(this.fwdEvtCounter%3==0){
+                sendEvent = true;
+                this.fwdEvtCounter=0;
+            }    
+        }
+        else
+        {
+            sendEvent = true;
+        }
+		if(sendEvent){
+            AppMobi.canvas.execute('AppMobi.canvas.setMouseCoords('+AppMobi.device.orientation+','+screen.width+','+screen.height+','+event.target.clientWidth+','+event.target.clientHeight+','+nX+','+nY+',"'+event.type+'");');
+		}		
+    }	
+}
 
 AppMobi.addConstructor(function() {
 	if (typeof AppMobi.canvas == "undefined") AppMobi.canvas = new AppMobi.Canvas();
